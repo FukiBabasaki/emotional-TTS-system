@@ -1,6 +1,11 @@
 import requests, os
 
+DEBUG_MODE = False
 class FujisakiExtractor:
+    NUL = ''
+    if DEBUG_MODE:
+        NUL+=' > NUL'
+    
     def __init__(self, text):
         self.text = text
 
@@ -16,7 +21,7 @@ class FujisakiExtractor:
         file.write(self.text)
         file.close()
 
-        cmd = "curl --silent -v -X POST -H 'content-type:multipart/form-data' -F SIGNAL=@" + self.sound + " -F LANGUAGE=eng-NZ -F TEXT=@"+ os.path.realpath(file.name) + " https://clarin.phonetik.uni-muenchen.de/BASWebServices/services/runMAUSBasic" + " > downloadpath.txt"
+        cmd = "curl --silent -v -X POST -H 'content-type:multipart/form-data' -F SIGNAL=@" + self.sound + " -F LANGUAGE=eng-NZ -F TEXT=@"+ os.path.realpath(file.name) + " https://clarin.phonetik.uni-muenchen.de/BASWebServices/services/runMAUSBasic" + " > downloadpath.txt" + NUL
         os.system(cmd)
 
         os.remove(file.name)
@@ -35,13 +40,13 @@ class FujisakiExtractor:
         
     def __generate_f0_file(self, sound, text_grid):
         # create lab file from TextGrid file.
-        cmd = r'bin\textgrid2lab.exe ' + text_grid + ' 3'
+        cmd = r'bin\textgrid2lab.exe ' + text_grid + ' 3' + NUL
         os.system(cmd)
         
         # Create pitch file from praat.exe
         pitch = text_grid.replace('.TextGrid', '.Pitch')
         print(pitch)
-        cmd = r'..\bin\Praat.exe --run bin\soundToPitch.psc ' + sound + " " + pitch + " > Nul"
+        cmd = r'..\bin\Praat.exe --run bin\soundToPitch.psc ' + sound + " " + pitch + NUL
         os.system(cmd)
 
         # need to replace frames with frame to avoid conflicts
@@ -53,13 +58,13 @@ class FujisakiExtractor:
             f.write(new_p)
 
         # finally conver pitch file to f0_ascii file
-        cmd = r'bin\pitch2f0_ascii.exe ' + pitch + " > Nul"
+        cmd = r'bin\pitch2f0_ascii.exe ' + pitch + NUL
         os.system(cmd)
 
         return os.path.realpath(pitch.replace('Pitch', 'f0_ascii'))
 
     def __generate_PAC(self, f0_ascii):
-        cmd = 'bin\interpolation ' + f0_ascii + " 0 4 0.0001 auto 3 > Nul"
+        cmd = 'bin\interpolation ' + f0_ascii + " 0 4 0.0001 auto 3" + NUL
         os.system(cmd)
         os.remove('interpolation.txt')
         os.remove('speech.4.txt')
@@ -75,7 +80,7 @@ class FujisakiExtractor:
         with open('list_pac.txt', 'w') as f:
             f.write(pac)
         
-        cmd = 'bin\labnpac.exe ' + f.name
+        cmd = 'bin\labnpac.exe ' + f.name + NUL
         os.system(cmd)
 
         os.remove(f.name)
