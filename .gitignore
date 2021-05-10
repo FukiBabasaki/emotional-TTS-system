@@ -130,7 +130,6 @@ dmypy.json
 
 # tts
 *.wav
-*.txt
 *.Pitch
 *.lab
 *.f0_ascii
