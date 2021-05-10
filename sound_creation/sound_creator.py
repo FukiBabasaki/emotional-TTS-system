@@ -17,6 +17,7 @@ class SoundCreator:
         wav_file = open('speech.wav', 'wb')
         wav_file.write(r.content)
 
+        wav_file.close()
         return os.path.realpath(wav_file.name)
 
 if __name__ == '__main__':
