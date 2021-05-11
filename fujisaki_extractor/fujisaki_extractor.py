@@ -21,7 +21,7 @@ class FujisakiExtractor:
         file.write(self.text)
         file.close()
 
-        cmd = "curl --silent -v -X POST -H 'content-type:multipart/form-data' -F SIGNAL=@" + self.sound + " -F LANGUAGE=eng-NZ -F TEXT=@"+ os.path.realpath(file.name) + " https://clarin.phonetik.uni-muenchen.de/BASWebServices/services/runMAUSBasic" + " > downloadpath.txt" + NUL
+        cmd = "curl --silent -v -X POST -H 'content-type:multipart/form-data' -F SIGNAL=@" + self.sound + " -F LANGUAGE=eng-NZ -F TEXT=@"+ os.path.realpath(file.name) + " https://clarin.phonetik.uni-muenchen.de/BASWebServices/services/runMAUSBasic" + " > downloadpath.txt" + self.NUL
         os.system(cmd)
 
         os.remove(file.name)
@@ -40,13 +40,12 @@ class FujisakiExtractor:
         
     def __generate_f0_file(self, sound, text_grid):
         # create lab file from TextGrid file.
-        cmd = r'bin\textgrid2lab.exe ' + text_grid + ' 3' + NUL
+        cmd = r'bin\textgrid2lab.exe ' + text_grid + ' 3' + self.NUL
         os.system(cmd)
         
         # Create pitch file from praat.exe
         pitch = text_grid.replace('.TextGrid', '.Pitch')
-        print(pitch)
-        cmd = r'..\bin\Praat.exe --run bin\soundToPitch.psc ' + sound + " " + pitch + NUL
+        cmd = r'..\bin\Praat.exe --run bin\soundToPitch.psc ' + sound + " " + pitch + self.NUL
         os.system(cmd)
 
         # need to replace frames with frame to avoid conflicts
@@ -58,13 +57,13 @@ class FujisakiExtractor:
             f.write(new_p)
 
         # finally conver pitch file to f0_ascii file
-        cmd = r'bin\pitch2f0_ascii.exe ' + pitch + NUL
+        cmd = r'bin\pitch2f0_ascii.exe ' + pitch + self.NUL
         os.system(cmd)
 
         return os.path.realpath(pitch.replace('Pitch', 'f0_ascii'))
 
     def __generate_PAC(self, f0_ascii):
-        cmd = 'bin\interpolation ' + f0_ascii + " 0 4 0.0001 auto 3" + NUL
+        cmd = 'bin\interpolation ' + f0_ascii + " 0 4 0.0001 auto 3" + self.NUL
         os.system(cmd)
         os.remove('interpolation.txt')
         os.remove('speech.4.txt')
@@ -80,15 +79,22 @@ class FujisakiExtractor:
         with open('list_pac.txt', 'w') as f:
             f.write(pac)
         
-        cmd = 'bin\labnpac.exe ' + f.name + NUL
+        cmd = 'bin\labnpac.exe ' + f.name + self.NUL
         os.system(cmd)
 
         os.remove(f.name)
 
         # Transform the syc.txt file into csv file
+        with open(pac.replace('PAC', 'lab'), 'r') as lab:
+            reader = csv.reader(lab)
+            rows = []
+            for row in reader:
+                rows.append(row[0])
+            DUR = rows[-1].split()[0]
+
         with open(r'speech.csv', 'w', newline='') as new_csv:
             writer = csv.writer(new_csv)
-            writer.writerow(['file', 'smpa', 'abs_aa_syn', 'dur_acc_syn', 'fmin_syn', 'switch_syn', 'ap_syn', 'dur_phr_syn'])
+            writer.writerow(['file', 'smpa', 'abs_aa_syn', 'dur_acc_syn', 'fmin_syn', 'switch_syn', 'ap_syn', 'dur_phr_syn', 'DUR'])
 
             ap_prev = '0'
             dur_phr_prev = '0'
@@ -118,7 +124,7 @@ class FujisakiExtractor:
                     else :
                         dur_phr_prev = dur_phr
                     
-                    writer.writerow([file, smpa, aa, float(t2) - float(t1), fmin, switch, ap, dur_phr])
+                    writer.writerow([file, smpa, aa, float(t2) - float(t1), fmin, switch, ap, dur_phr, DUR])
         
         os.remove('syc.txt')
         return pac.replace('PAC', 'csv')
