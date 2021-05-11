@@ -4,6 +4,7 @@ class SoundCreator:
         self.text = text
         
     def create_sound(self):
+        os.chdir('sound_creation')
         '''
         This function saves a wav file that contains 
         speech of the input text. 
@@ -18,10 +19,6 @@ class SoundCreator:
         wav_file.write(r.content)
 
         wav_file.close()
-        return os.path.realpath(wav_file.name)
-
-if __name__ == '__main__':
-    sc = SoundCreator('hello')
-    name = sc.create_sound()
-
-    print(name)
+        filename = os.path.realpath(wav_file.name)
+        os.chdir('..')
+        return filename
