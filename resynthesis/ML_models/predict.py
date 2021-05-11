@@ -14,8 +14,6 @@ from sklearn.metrics import mean_squared_error
 from sklearn.datasets import make_regression
 from sklearn.ensemble import RandomForestRegressor
 
-# Get the path to this python file.
-cwd = os.path.dirname(os.path.abspath(__file__))
 
 class Predictor:
     def __init__(self, predictor, emotion, speaker='male2'):
@@ -23,39 +21,52 @@ class Predictor:
         self.predictor = predictor
         self.speaker = speaker
 
-        predicted = os.path.join('..', 'predicted.csv')
+
+    def predict(self):
+        os.chdir('ML_models')
+        predicted = os.path.realpath(os.path.join('..', 'predicted.csv'))
         #Initialise with columns
-        with(predicted, 'w') as csvfile:
+        with open(predicted, 'w') as csvfile:
             csv_writer = csv.writer(csvfile)
             csv_writer.writerow(['speaker', 'emotion', 'aa_predicted', 'ap_predicted', 'dur_acc_predicted', 'ton', 'toff', 'dur_phr_predicted', 'fmin_predicted'])
             
         # Get the input dataset.
-        dataset = pd.read_csv(predictor)
+        predictors = pd.read_csv(self.predictor)
+
+        # Get set of required features
+        feat = pd.read_csv('set_of_features.csv', sep=r'\t', engine='python').columns
+
+        #Dropping columns that are not required
+        predictors = predictors.loc[:, feat]
 
         #Converting categorical data into numbers with Pandas and Scikit-learn
-        dataset = pd.get_dummies(dataset)
-        np.where(np.isnan(dataset))
-        dataset = dataset.dropna(how='any')
+        predictors = pd.get_dummies(predictors)
+        np.where(np.isnan(predictors))
+        predictors = predictors.dropna(how='any')
 
         # Get models for the emotion
-        rf_models, ada_models = self.getModels(emotion)
+        rf_models, ada_models = self.getModels(self.emotion)
 
         predictions = list()
 
         for x in range(5):
-            rf_predict = rf_models[x].predict(dataset) 
-            ada_predict = ada_models[x].predict(dataset)
+            rf_predict = rf_models[x].predict(predictors) 
+            ada_predict = ada_models[x].predict(predictors)
 
             predictions.append((rf_predict + ada_predict)/2)
         
         self.predictions = predictions
+
+        self.append_to_csv(predicted)
+        os.chdir('..')
+        return predicted
 
     def getModels(self, emotion):
         """
         This function takes emotion as an input and returns
         lists of adaboost and random forest models in a folder.
         """
-        pathToModels = os.path.join(cwd, 'modelfiles')
+        pathToModels = os.path.join('trained_models')
 
         rf_models = list()
         ada_models = list()
@@ -72,8 +83,8 @@ class Predictor:
 
         return rf_models, ada_models
 
-    def append_to_csv(self):
-        with open('predictions_for_all_robot_dialogs_withfeats.csv', 'a', newline='') as csvfile:
+    def append_to_csv(self, path):
+        with open(path, 'a', newline='') as csvfile:
             csv_writer = csv.writer(csvfile)
             ton = 0
             toff= 0
