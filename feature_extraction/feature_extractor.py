@@ -6,13 +6,16 @@ class FeatureExtractor:
     
 
     def extract_text_features(self):
+        os.chdir('feature_extraction')
         # this is temporary command to get features.
         # It needs to be replaced with proper feature extractor for Eng-NZ
         # Right now the features are related to US English
         # One possible solution: http://robotspeech.auckland.ac.nz:59125/process?INPUT_TEXT=%T%&INPUT_TYPE=TEXT&OUTPUT_TYPE=TARGETFEATURES&LOCALE=en_NZ
         
         r = requests.get(r"http://mary.dfki.de:59125/process?INPUT_TEXT=" + self.cleaned_text + r"&INPUT_TYPE=TEXT&OUTPUT_TYPE=TARGETFEATURES&LOCALE=en_US")
-        return self.__textfeatures_to_csv(r.text)
+        new_csv = self.__textfeatures_to_csv(r.text)
+        os.chdir('..')
+        return new_csv
     
     def __textfeatures_to_csv(self, textfeature):
         
