@@ -1,6 +1,7 @@
 import requests, os
 
 DEBUG_MODE = False
+abspath = os.path.abspath(os.path.dirname(__file__))
 class FujisakiExtractor:
     NUL = ''
     if DEBUG_MODE:
@@ -10,11 +11,18 @@ class FujisakiExtractor:
         self.text = text
 
     def extract_features(self, sound):
+        os.chdir('fujisaki_extractor')
         self.sound = sound
         text_grid = self.__generate_textgrid()
         f0_ascii = self.__generate_f0_file(sound, text_grid)
-        pac = self.__generate_PAC(f0_ascii)
-        self.__generate_csv(pac)
+        self.pac = self.__generate_PAC(f0_ascii)
+        fuji = self.__generate_csv(self.pac)
+
+        os.remove(text_grid)
+        os.remove(f0_ascii)
+        os.chdir('..')
+
+        return fuji
 
     def __generate_textgrid(self):
         file = open('text.txt', 'w+')
@@ -35,7 +43,7 @@ class FujisakiExtractor:
         r = requests.get(download_link)
         with open('speech.TextGrid', 'w') as f:
             f.write(r.text)
-        
+            
             return os.path.realpath(f.name)
         
     def __generate_f0_file(self, sound, text_grid):
@@ -43,6 +51,8 @@ class FujisakiExtractor:
         cmd = r'bin\textgrid2lab.exe ' + text_grid + ' 3' + self.NUL
         os.system(cmd)
         
+        self.lab = text_grid.replace('TextGrid', 'lab')
+
         # Create pitch file from praat.exe
         pitch = text_grid.replace('.TextGrid', '.Pitch')
         cmd = r'..\bin\Praat.exe --run bin\soundToPitch.psc ' + sound + " " + pitch + self.NUL
