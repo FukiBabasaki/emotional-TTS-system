@@ -17,52 +17,33 @@ from sklearn.ensemble import RandomForestRegressor
 # Get the path to this python file.
 cwd = os.path.dirname(os.path.abspath(__file__))
 
-# Change the working directory
-os.chdir(os.path.join('..', 'files'))
-
-# Initialise csv file with columns
-with open('predictions_for_all_robot_dialogs_withfeats.csv', 'w', newline='') as csvfile:
-    csv_writer = csv.writer(csvfile)
-    csv_writer.writerow(['speaker', 'emotion', 'sentence', 'aa_predicted', 'ap_predicted', 'dur_acc_predicted', 'ton', 'toff', 'dur_phr_predicted', 'fmin_predicted'])
-
-def main():
-    # loop over all csv files.
-    for csv in glob.glob("*.csv"):
-
-        # Get the input dataset.
-        dataset = pd.read_csv(csv)
-
-        # Get the strings for each attribute
-        basename = os.path.basename(csv)
-
-        try:
-            speaker,emotion,context,session = basename.split("_")
-        except ValueError:
-            # When this exception is thrown, the csv is not related to the fujisaki features.
-            continue
-
-        context,a = context.split("a")
-
-        #Converting categorical data into numbers with Pandas and Scikit-learn
-        dataset = pd.get_dummies(dataset)
-        np.where(np.isnan(dataset))
-        dataset = dataset.dropna(how='any')
-
-
-        # Get models for the emotion
-        rf_models, ada_models = getModels(emotion)
-
-        predictions = list()
-
-        for x in range(5):
-            rf_predict = rf_models[x].predict(dataset) 
-            ada_predict = ada_models[x].predict(dataset)
-
-            predictions.append((rf_predict + ada_predict)/2)
-            
-        append_to_csv(predictions, speaker, emotion, context)
+def predict(predictor, emotion, speaker='male2'):
+    predicted = os.path.join('..', 'predicted.csv')
+    #Initialise with columns
+    with(predicted, 'w') as csvfile:
+        csv_writer = csv.writer(csvfile)
+        csv_writer.writerow(['speaker', 'emotion', 'aa_predicted', 'ap_predicted', 'dur_acc_predicted', 'ton', 'toff', 'dur_phr_predicted', 'fmin_predicted'])
         
+    # Get the input dataset.
+    dataset = pd.read_csv(predictor)
 
+    #Converting categorical data into numbers with Pandas and Scikit-learn
+    dataset = pd.get_dummies(dataset)
+    np.where(np.isnan(dataset))
+    dataset = dataset.dropna(how='any')
+
+    # Get models for the emotion
+    rf_models, ada_models = getModels(emotion)
+
+    predictions = list()
+
+    for x in range(5):
+        rf_predict = rf_models[x].predict(dataset) 
+        ada_predict = ada_models[x].predict(dataset)
+
+        predictions.append((rf_predict + ada_predict)/2)
+    
+    append_to_csv(predictions, speaker, emotion)
 
 def getModels(emotion):
     """
@@ -86,7 +67,7 @@ def getModels(emotion):
 
     return rf_models, ada_models
 
-def append_to_csv(prediction_list,speaker, emotion, sentence):
+def append_to_csv(prediction_list,speaker, emotion):
     with open('predictions_for_all_robot_dialogs_withfeats.csv', 'a', newline='') as csvfile:
         csv_writer = csv.writer(csvfile)
         ton = 0
@@ -101,6 +82,4 @@ def append_to_csv(prediction_list,speaker, emotion, sentence):
             dur_acc_predicted = prediction_list[2][i]
             dur_phr_predicted = prediction_list[3][i]
             fmin_predicted = prediction_list[4][i]
-            csv_writer.writerow([speaker, emotion, sentence, aa_predicted, ap_predicted, dur_acc_predicted, ton, toff, dur_phr_predicted, fmin_predicted])
-        
-main()
+            csv_writer.writerow([speaker, emotion, aa_predicted, ap_predicted, dur_acc_predicted, ton, toff, dur_phr_predicted, fmin_predicted])
