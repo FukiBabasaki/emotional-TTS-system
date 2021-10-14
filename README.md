@@ -4,8 +4,14 @@
 ### Prerequisites
 
 This has to be run on Windows 8 or above, and following commands are required to run the app.
-```(venv) ~$ python -m pip install -r requirements.txt```
-```(venv) ~$ flask run```
+
+```
+(venv) ~$ python -m pip install -r requirements.txt
+```
+
+```
+(venv) ~/backend/$ python tts_creator.py 
+```
 
 ## Current Issues
 
