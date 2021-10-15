@@ -1,4 +1,4 @@
-# emotional-TTS-system
+# Emotional TTS System
 
 ## Getting Started
 ### Prerequisites
